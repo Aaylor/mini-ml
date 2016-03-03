@@ -1,14 +1,47 @@
 
-let __clean_types = ref false
-let set_clean_types t = __clean_types := t
-let clean_types () = !__clean_types
+module type StorageParameter = sig
+  type t
+  val set : t -> unit
+  val get : unit -> t
+end
 
-let __file : string option ref = ref None
-let set_file s = __file := Some s
-let file () = match !__file with
-  | None -> failwith "File is not set..."
-  | Some s -> s
+module type InitialParameter = sig
+  type t
+  val init : t
+end
 
-let __unsafe = ref false
-let set_unsafe t = __unsafe := t
-let unsafe () = !__unsafe
+module type BooleanParameter = StorageParameter with type t := bool
+
+module type StringParameter  = StorageParameter with type t := string
+
+
+
+module StorageParameterImpl (P : InitialParameter) = struct
+  type t = P.t
+  let value = ref P.init
+  let set t = value := t
+  let get () = !value
+end
+
+module BooleanParam = struct
+  type t = bool
+end
+module False = struct include BooleanParam let init = false end
+module True  = struct include BooleanParam let init = true  end
+
+module StringParam = struct
+  type t = string
+  let init = ""
+end
+
+module PrintProgram = StorageParameterImpl(False)
+
+module CleanTypes = StorageParameterImpl(False)
+
+module File = StorageParameterImpl(struct type t = string let init = "" end)
+
+module Unsafe = StorageParameterImpl(False)
+
+module Interpreter = StorageParameterImpl(True)
+
+module Interactive = StorageParameterImpl(False)

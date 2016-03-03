@@ -1,9 +1,21 @@
 
-val set_clean_types : bool -> unit
-val clean_types : unit -> bool
+module type StorageParameter = sig
+  type t
+  val set : t -> unit
+  val get : unit -> t
+end
 
-val set_file : string -> unit
-val file : unit -> string
+module type BooleanParameter = StorageParameter with type t := bool
+module type StringParameter  = StorageParameter with type t := string
 
-val set_unsafe : bool -> unit
-val unsafe : unit -> bool
+module PrintProgram : BooleanParameter
+
+module CleanTypes : BooleanParameter
+
+module File : StringParameter
+
+module Unsafe : BooleanParameter
+
+module Interpreter : BooleanParameter
+
+module Interactive : BooleanParameter

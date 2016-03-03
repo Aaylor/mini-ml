@@ -19,20 +19,32 @@ let options =
 
     write_options
       ["-c"; "--clean"; "--clean-types"]
-      (Arg.Unit (fun () -> Options.set_clean_types true))
+      (Arg.Unit (fun () -> Options.CleanTypes.set true))
       " Don't display every variable, but only the last type."
     ;
 
     write_options
       ["--unsafe"]
-      (Arg.Unit (fun () -> Options.set_unsafe true))
+      (Arg.Unit (fun () -> Options.Unsafe.set true))
       " Disable the typechecking"
     ;
-   
+
+    write_options
+      ["--no-interpreter"]
+      (Arg.Unit (fun () -> Options.Interpreter.set false))
+      " Disable the interpreter."
+    ;
+
+    write_options
+      ["-i"; "--interactive"]
+      (Arg.Unit (fun () -> Options.Interactive.set true))
+      " Open a top-level for the program. If this option is set, interpreter \
+       is disabled"
+    ;
   ]
 
 (* does nothing when encounter an anonymous option *)
-let anon_fun = Options.set_file
+let anon_fun = Options.File.set
 
 (* [parse ()] parse every cli arguments *)
 let parse () =
