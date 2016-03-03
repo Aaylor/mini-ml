@@ -41,9 +41,14 @@ let initial_environment () : env =
   in
   let primitive env (n,e,q) = Typeenv.add n {quantifier = q; ty = (mk e)} env in
   let bt x = BaseType x in
-  let eqv  = fresh_variable "eq"  and neqv = fresh_variable "neq"
-  and tref = fresh_variable "ref" and bang = fresh_variable "bang"
-  and set  = fresh_variable "set" in
+  let eqv  = fresh_variable "eq"   and neqv = fresh_variable "neq"
+  and tref = fresh_variable "ref"  and bang = fresh_variable "bang"
+  and set  = fresh_variable "set"
+  and vfst = fresh_variable "fst1" and vsnd = fresh_variable "snd1"
+  and wfst = fresh_variable "fst2" and wsnd = fresh_variable "snd2" in
+  let vset e1 e2 =
+    VarSet.(add (extract_name e2) (singleton (extract_name e1)))
+  in
   List.fold_left primitive Typeenv.empty [
     ("+",  [bt Int; bt Int; bt Int], VarSet.empty);
     ("-",  [bt Int; bt Int; bt Int], VarSet.empty);
@@ -53,6 +58,8 @@ let initial_environment () : env =
     ("<=", [bt Int; bt Int; bt Bool], VarSet.empty);
     (">",  [bt Int; bt Int; bt Bool], VarSet.empty);
     (">=", [bt Int; bt Int; bt Bool], VarSet.empty);
+    ("fst", [vfst; vsnd; vfst], vset vfst vsnd);
+    ("snd", [wfst; wsnd; wsnd], vset wfst wsnd);
     ("=" , [eqv; eqv; bt Bool], VarSet.singleton (extract_name eqv));
     ("<>", [neqv; neqv; bt Bool], VarSet.singleton (extract_name neqv));
     ("ref", [tref; Ref tref], VarSet.singleton (extract_name tref));
@@ -96,12 +103,26 @@ let rec free_variables_env (env : env) =
       VarSet.(union (diff (free_variables_typ value.ty) value.quantifier) acc)
     ) env VarSet.empty
 
-let generalize body ty env = match body with
-  | Fun _ ->
-    { quantifier = VarSet.diff (free_variables_typ ty) (free_variables_env env);
+let generalize body ty env =
+  Logger.debug "%s" (Printer.string_of_expr body);
+  if Expansivity.is_expansive body then (
+    Logger.debug "    --> is_expansive\n";
+    empty_schema ty
+  ) else (
+    Logger.debug "    --> is NOT expansive\n";
+    { quantifier =
+        VarSet.diff (free_variables_typ ty) (free_variables_env env);
       ty
     }
-  | _ -> empty_schema ty
+  )
+
+
+  (* match body with *)
+  (* | Fun _ -> *)
+  (*   { quantifier = VarSet.diff (free_variables_typ ty) (free_variables_env env); *)
+  (*     ty *)
+  (*   } *)
+  (* | _ -> empty_schema ty *)
   
 let rec infer_phrase phrase =
   let env : env = initial_environment () in
@@ -131,7 +152,7 @@ and infer_definition env def =
     def.nom (string_of_expression_type ty);
   (ty, env')
 
-and infer_expression env = function
+and infer_expression env expr = match expr with
   | Var v ->
     let schema = Typeenv.find v env in
     instance schema, env
@@ -152,7 +173,7 @@ and infer_expression env = function
     fresh, env
   | Let (def, body) ->
     let (ty_def, _) = infer_definition env def in
-    let env' = Typeenv.add def.nom (generalize body ty_def env) env in
+    let env' = Typeenv.add def.nom (generalize expr ty_def env) env in
     let (ty_body, env') = infer_expression env' body in
     ty_body, env'
   | Pair (e1, e2) ->

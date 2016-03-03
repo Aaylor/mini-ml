@@ -100,6 +100,12 @@ let init_env () =
          | _ -> assert false));
     (":=", VPrimitive (function
          | VTuple (VAddress a, value) -> Memory.update a value memory; VUnit
+         | _ -> assert false));
+    ("fst", VPrimitive (function
+         | VTuple (v1, _) -> v1
+         | _ -> assert false));
+    ("snd", VPrimitive (function
+         | VTuple (_, v2) -> v2
          | _ -> assert false))
   ] in
   List.fold_left (fun env elt ->
