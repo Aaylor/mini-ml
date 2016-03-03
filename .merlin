@@ -1,0 +1,12 @@
+S src/
+S src/interpreter
+S src/mini-caml
+S src/typechecker
+S src/log
+S src/cli
+B _build/src/
+B _build/src/interpreter
+B _build/src/mini-caml
+B _build/src/typechecker
+B _build/src/log
+B _build/src/cli
