@@ -105,25 +105,17 @@ let rec free_variables_env (env : env) =
 
 let generalize body ty env =
   Logger.debug "%s" (Printer.string_of_expr body);
-  if Expansivity.is_expansive body then (
+  if Expansivity.is_expansive body then begin
     Logger.debug "    --> is_expansive\n";
     empty_schema ty
-  ) else (
+  end else begin
     Logger.debug "    --> is NOT expansive\n";
     { quantifier =
         VarSet.diff (free_variables_typ ty) (free_variables_env env);
       ty
     }
-  )
+  end
 
-
-  (* match body with *)
-  (* | Fun _ -> *)
-  (*   { quantifier = VarSet.diff (free_variables_typ ty) (free_variables_env env); *)
-  (*     ty *)
-  (*   } *)
-  (* | _ -> empty_schema ty *)
-  
 let rec infer_phrase phrase =
   let env : env = initial_environment () in
   match phrase with
