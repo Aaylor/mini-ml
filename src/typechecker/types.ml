@@ -75,8 +75,8 @@ and string_of_base_type = function
 
 and string_of_var {name; content} =
   let ty = match content with
-    | None -> if (Options.clean_types ()) then name else "none"
+    | None -> if (Options.CleanTypes.get ()) then name else "none"
     | Some ty -> string_of_expression_type ty
   in
-  if (Options.clean_types ()) then ty
+  if (Options.CleanTypes.get ()) then ty
   else Printf.sprintf "(%s : %s)" name ty
