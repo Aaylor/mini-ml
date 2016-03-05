@@ -116,19 +116,18 @@ let generalize body ty env =
     }
   end
 
-let rec infer_phrase phrase =
-  let env : env = initial_environment () in
+let rec infer_phrase (env : env) phrase =
   match phrase with
   | Expr e -> infer_expression env e
   | Def  d -> infer_definition env d
 
-and infer_definition env def =
-  let (ty, env') =
+and infer_definition env def : env * expression_type =
+  let (env', ty) =
     match def with
     | { recursive = false; nom; expr } ->
-      let ty, _ = infer_expression env expr in
+      let _, ty = infer_expression env expr in
       let env'  = Typeenv.add nom (empty_schema ty) env in
-      (ty, env')
+      (env', ty)
     | { recursive = true;  nom; expr } ->
       let arrow = Arrow (
           fresh_variable "arrow_left",
@@ -136,50 +135,49 @@ and infer_definition env def =
         )
       in
       let env' = Typeenv.add nom (empty_schema arrow) env in
-      let ty, _ = infer_expression env' expr in
+      let _, ty = infer_expression env' expr in
       mgu (arrow =?= ty);
-      (ty, env')
+      (env', ty)
   in
   Logger.debug "  Internal --  %s : %s\n"
     def.nom (string_of_expression_type ty);
-  (ty, env')
+  (env', ty)
 
 and infer_expression env expr = match expr with
   | Var v ->
     let schema = Typeenv.find v env in
-    instance schema, env
+    env, instance schema
   | Bool _ ->
-    BaseType Bool, env
+    env, BaseType Bool
   | Int _ ->
-    BaseType Int, env
+    env, BaseType Int
   | Fun cases ->
     infer_cases env cases
   | App (e1, e2) ->
-    let (ty_e1, _) = infer_expression env e1 in
+    let _, ty_e1 = infer_expression env e1 in
     Logger.debug "Infer e1: %s\n" (string_of_expression_type ty_e1);
-    let (ty_e2, _) = infer_expression env e2 in
+    let _, ty_e2 = infer_expression env e2 in
     Logger.debug "Infer e2: %s\n" (string_of_expression_type ty_e2);
     let fresh = fresh_variable "app" in
     Logger.debug "MGU OF: %s\n" (Printer.string_of_expr (App(e1, e2)));
     mgu (ty_e1 =?= Arrow(ty_e2, fresh));
-    fresh, env
+    env, fresh
   | Let (def, body) ->
-    let (ty_def, _) = infer_definition env def in
+    let _, ty_def = infer_definition env def in
     let env' = Typeenv.add def.nom (generalize expr ty_def env) env in
-    let (ty_body, env') = infer_expression env' body in
-    ty_body, env'
+    infer_expression env' body
   | Pair (e1, e2) ->
-    let (ty_e1, _) = infer_expression env e1 in
-    let (ty_e2, _) = infer_expression env e2 in
-    Star (ty_e1, ty_e2), env
+    let _, ty_e1 = infer_expression env e1 in
+    let _, ty_e2 = infer_expression env e2 in
+    env, Star (ty_e1, ty_e2)
   | Nil  ->
     let fresh = fresh_variable "nil" in
-    List fresh, env
+    env, List fresh
   | Cons (x, xs) ->
-    let (ty_x, _)  = infer_expression env x in
-    let (ty_xs, _) = infer_expression env xs in
+    let _, ty_x  = infer_expression env x in
+    let _, ty_xs = infer_expression env xs in
     mgu (List ty_x =?= ty_xs);
-    ty_xs, env
+    env, ty_xs
     
 and bind_pattern env = function
   | MVar  v -> Typeenv.add v (empty_schema (fresh_variable "pattern")) env
@@ -206,7 +204,7 @@ and infer_cases env cases =
     | (pattern, expr) :: xs ->
       let env' = bind_pattern env pattern in
       let result =
-        (pattern_as_type env' pattern, fst (infer_expression env' expr))
+        (pattern_as_type env' pattern, snd (infer_expression env' expr))
       in
       result :: extract_types xs
   in
@@ -218,4 +216,4 @@ and infer_cases env cases =
   List.iter (fun x -> mgu (x =?= input_ty)) inputs;
   List.iter (fun x -> mgu (x =?= output_ty)) outputs;
   
-  Arrow (input_ty, output_ty), env
+  env, Arrow (input_ty, output_ty)
