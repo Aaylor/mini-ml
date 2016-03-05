@@ -125,6 +125,12 @@ and fin_de_definition d = parser
   | [< 'Kwd "in"; e = expression >] -> Expr (Let(d, e))
   | [< >] -> Def d
 
+let rec top_level = parser
+  | [< p = phrase; next = end_of_top_level p >] -> next
+and end_of_top_level phrase = parser
+  | [< phrases = top_level >] -> phrase :: phrases
+  | [< >] -> [phrase]
+
 let analyseur_lexical =
   Genlex.make_lexer [
     "function"; "let"; "rec"; "in"; "match"; "with"; "true"; "false";
@@ -134,7 +140,7 @@ let analyseur_lexical =
 
 let lire_phrase flux =
   try
-    phrase (analyseur_lexical flux)
+    top_level (analyseur_lexical flux)
   with e ->
     Printf.printf "Parse error at char %d\n%!" (Stream.count flux);
     raise e

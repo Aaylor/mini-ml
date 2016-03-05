@@ -13,4 +13,4 @@
 (*                                                                     *)
 (***********************************************************************)
 
-val lire_phrase : char Stream.t -> Caml.phrase;;
+val lire_phrase : char Stream.t -> Caml.phrase list
