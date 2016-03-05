@@ -1,6 +1,7 @@
 open Caml
 open Mgu
 open Types
+open Schema
 
 let fresh_variable =
   let id = ref 0 in
@@ -11,23 +12,7 @@ let extract_name = function
   | Variable { name } -> name
   | _ -> assert false
 
-type schema = { quantifier: VarSet.t; ty: expression_type }
-type env = schema Typeenv.t
-
-let empty_schema ty = { quantifier = VarSet.empty; ty }
-
-let string_of_schema { quantifier; ty } =
-  let qs =
-    if VarSet.is_empty quantifier then ""
-    else Printf.sprintf " %% { ∀ %s }"
-        (String.concat ", " (VarSet.to_list quantifier))
-  in
-  Printf.sprintf "%s%s" (string_of_expression_type ty) qs
-
-let string_of_env env =
-  Typeenv.fold (fun k v acc ->
-      Printf.sprintf "%s%s : %s\n" acc k (string_of_schema v)
-    ) env ""
+type env = Schema.schema Typeenv.t
 
 
 
@@ -39,7 +24,9 @@ let initial_environment () : env =
     | [x; y]    -> Arrow(x, y)
     | _ -> assert false
   in
-  let primitive env (n,e,q) = Typeenv.add n {quantifier = q; ty = (mk e)} env in
+  let primitive env (n,e,q) =
+    Typeenv.add n { quantifier = q; ty = (mk e) } env
+  in
   let bt x = BaseType x in
   let eqv  = fresh_variable "eq"   and neqv = fresh_variable "neq"
   and tref = fresh_variable "ref"  and bang = fresh_variable "bang"
@@ -107,7 +94,7 @@ let generalize body ty env =
   Logger.debug "%s" (Printer.string_of_expr body);
   if Expansivity.is_expansive body then begin
     Logger.debug "    --> is_expansive\n";
-    empty_schema ty
+    Schema.empty ty
   end else begin
     Logger.debug "    --> is NOT expansive\n";
     { quantifier =
@@ -126,7 +113,7 @@ and infer_definition env def : env * expression_type =
     match def with
     | { recursive = false; nom; expr } ->
       let _, ty = infer_expression env expr in
-      let env'  = Typeenv.add nom (empty_schema ty) env in
+      let env'  = Typeenv.add nom (Schema.empty ty) env in
       (env', ty)
     | { recursive = true;  nom; expr } ->
       let arrow = Arrow (
@@ -134,7 +121,7 @@ and infer_definition env def : env * expression_type =
           fresh_variable "arrow_right"
         )
       in
-      let env' = Typeenv.add nom (empty_schema arrow) env in
+      let env' = Typeenv.add nom (Schema.empty arrow) env in
       let _, ty = infer_expression env' expr in
       mgu (arrow =?= ty);
       (env', ty)
@@ -180,7 +167,7 @@ and infer_expression env expr = match expr with
     env, ty_xs
     
 and bind_pattern env = function
-  | MVar  v -> Typeenv.add v (empty_schema (fresh_variable "pattern")) env
+  | MVar  v -> Typeenv.add v (Schema.empty (fresh_variable "pattern")) env
   | MBool _ -> env
   | MInt  _ -> env
   | MPair (p1, p2) -> bind_pattern (bind_pattern env p1) p2

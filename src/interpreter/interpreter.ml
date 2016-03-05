@@ -53,7 +53,12 @@ let rec string_of_value = function
   | VPrimitive _ ->
     "λ. <primitive>"
   | VAddress addr ->
-    Printf.sprintf "&%s" (Memory.string_of_address addr)
+    begin try
+      let value = Memory.get addr memory in
+      Printf.sprintf "{ contents = %s }" (string_of_value value)
+    with _ ->
+      "&<internal error>"
+    end
   | VUnit ->
     "()"
 

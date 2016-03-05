@@ -70,7 +70,6 @@ let end_of_phrase line =
   with Not_found ->
     (line, false)
   
-
 let read_line_opt () =
   try Some (read_line ()) with End_of_file -> None
 
@@ -89,7 +88,6 @@ let rec read_phrase ?(buffer = Buffer.create 13) ?(break = false) () =
 let rec process_interactive env =
   match read_phrase () with
   | Some phrase_str ->
-    Printf.printf "\"%s\"\n" phrase_str;
     let phrase = match Parser.lire_phrase (Stream.of_string phrase_str) with
       | [x] -> x
       | _ -> assert false
@@ -100,6 +98,7 @@ let rec process_interactive env =
     env
 
 let interactive () =
+  Printf.printf "\tMini-Caml - Projet Typage 2016\n\n";
   let env = initial_env () in
   ignore @@ process_interactive env
 
