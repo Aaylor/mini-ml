@@ -76,6 +76,6 @@ let rec mgu : mgu -> unit = fun mgu' ->
   (* Failure here, reached when there is an inconsistency in the mgu system *)
   | (x, y) ->
     raise (MguFailureException (
-      Printf.sprintf "Failed to do mgu:\nt1: %s\nt2: %s\n"
-        (string_of_expression_type x) (string_of_expression_type y)
-    ))
+        Format.sprintf "@[<hov 2>Failed to do mgu:@\nt1: %s@\nt2: %s@]\n"
+          (string_of_expression_type x) (string_of_expression_type y)
+      ))
