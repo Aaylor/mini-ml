@@ -120,9 +120,9 @@ exception PatternBindingFailure of string
 let rec interpret env phrase =
   match phrase with
   | Def definition ->
-    snd (interpret_definition env definition)
+    interpret_definition env definition
   | Expr expression ->
-    interpret_expression env expression
+    env, interpret_expression env expression
 
 and interpret_definition env definition =
   match definition with
