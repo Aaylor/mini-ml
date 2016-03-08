@@ -88,11 +88,17 @@ let rec read_phrase ?(buffer = Buffer.create 13) ?(break = false) () =
 let rec process_interactive env =
   match read_phrase () with
   | Some phrase_str ->
-    let phrase = match Parser.lire_phrase (Stream.of_string phrase_str) with
-      | [x] -> x
-      | _ -> assert false
+    let env' =
+      try
+        let phrase = match Parser.lire_phrase (Stream.of_string phrase_str) with
+          | [x] -> x
+          | _ -> assert false
+        in
+        process_phrase false env phrase
+      with Stream.Failure | Stream.Error _ ->
+        Printf.printf "Error: parsing error.\n\n";
+        env
     in
-    let env' = process_phrase false env phrase in
     process_interactive env'
   | None ->
     env
