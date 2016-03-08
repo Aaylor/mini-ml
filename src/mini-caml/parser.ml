@@ -126,10 +126,8 @@ and fin_de_definition d = parser
   | [< >] -> Def d
 
 let rec top_level = parser
-  | [< p = phrase; next = end_of_top_level p >] -> next
-and end_of_top_level phrase = parser
-  | [< phrases = top_level >] -> phrase :: phrases
-  | [< >] -> [phrase]
+  | [< p = phrase; top = top_level >] -> p :: top
+  | [< >] -> []
 
 let analyseur_lexical =
   Genlex.make_lexer [
