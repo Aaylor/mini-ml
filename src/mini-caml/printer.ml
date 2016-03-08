@@ -16,10 +16,6 @@ let pri_let = 1
 let pri_cons = 5
 let pri_app = 12
 
-let paren_if b s = if b then "("^s^")" else s
-
-let pr_bool = function true -> "true" | false -> "false"
-
 let surround b fmt s =
   Format.fprintf fmt "%s%t%s"
     (if b then "(" else "") s (if b then ")" else "")
@@ -58,7 +54,7 @@ let rec print_expression priority fmt expr =
       )
   | Fun [MVar v, e] ->
     psurround pri_fun (fun fmt ->
-        Format.fprintf fmt "function %s -> %a" v
+        Format.fprintf fmt "function %s ->@\n%a" v
           (print_expression pri_fun) e
       )
   | Fun l ->

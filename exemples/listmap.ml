@@ -1,1 +1,0 @@
-let rec map = function f -> function [] -> [] | x::l -> f x :: map f l

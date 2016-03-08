@@ -5,6 +5,8 @@ module Memory : sig
   type address
   type 'a memory  
 
+  exception Out_of_memory
+  
   val init_memory : 'a -> 'a memory
   
   val store : 'a -> 'a memory -> address
@@ -20,6 +22,8 @@ end = struct
   type address = int
   type 'a memory = 'a array
 
+  exception Out_of_memory
+  
   let max_size = 32456
 
   let init_memory elt =
@@ -30,7 +34,7 @@ end = struct
   let next_address =
     fun () ->
       incr addr;
-      if !addr = max_size then failwith "Out Of Memory" else !addr
+      if !addr = max_size then raise Out_of_memory else !addr
 
   let store value memory =
     let addr = next_address () in
