@@ -57,11 +57,13 @@ let rec string_of_expression_type = function
   | Variable v -> string_of_var v
   | BaseType b -> string_of_base_type b
   | Arrow (t1, t2) ->
-    Printf.sprintf "%s -> %s"
-      (string_of_expression_type t1) (string_of_expression_type t2)
+    Printf.sprintf "(%s -> %s)"
+      (string_of_expression_type t1)
+      (string_of_expression_type t2)
   | Star (t1, t2) ->
     Printf.sprintf "(%s * %s)"
-      (string_of_expression_type t1) (string_of_expression_type t2)
+      (string_of_expression_type t1)
+      (string_of_expression_type t2)
   | List t ->
     Printf.sprintf "%s list" (string_of_expression_type t)
   | Ref t ->

@@ -151,7 +151,7 @@ and infer_expression env expr = match expr with
     env, fresh
   | Let (def, body) ->
     let _, ty_def = infer_definition env def in
-    let env' = Typeenv.add def.nom (generalize expr ty_def env) env in
+    let env' = Typeenv.add def.nom (generalize def.expr ty_def env) env in
     infer_expression env' body
   | Pair (e1, e2) ->
     let _, ty_e1 = infer_expression env e1 in
