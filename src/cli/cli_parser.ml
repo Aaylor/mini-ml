@@ -18,9 +18,9 @@ let options =
     ;
 
     write_options
-      ["-c"; "--clean"; "--clean-types"]
-      (Arg.Unit (fun () -> Options.CleanTypes.set true))
-      " Don't display every variable, but only the last type."
+      ["-d"; "--debug"; "--debug-types"]
+      (Arg.Unit (fun () -> Options.DebugTypes.set true))
+      " Display every variables made during the typechecking."
     ;
 
     write_options

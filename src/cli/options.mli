@@ -10,7 +10,7 @@ module type StringParameter  = StorageParameter with type t := string
 
 module PrintProgram : BooleanParameter
 
-module CleanTypes : BooleanParameter
+module DebugTypes : BooleanParameter
 
 module File : StringParameter
 

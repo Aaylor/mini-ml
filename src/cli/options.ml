@@ -36,7 +36,7 @@ end
 
 module PrintProgram = StorageParameterImpl(False)
 
-module CleanTypes = StorageParameterImpl(False)
+module DebugTypes = StorageParameterImpl(False)
 
 module File = StorageParameterImpl(struct type t = string let init = "" end)
 

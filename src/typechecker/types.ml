@@ -116,12 +116,15 @@ and string_of_base_type = function
 and string_of_var gen env {name; content} =
   let ty = match content with
     | None ->
-      if (Options.CleanTypes.get ()) then
-        replace env gen name
-      else
+      if (Options.DebugTypes.get ()) then
         ("none", env)
+      else
+        replace env gen name
+        
     | Some ty ->
       pretty_string_of_expression_type gen env ty
   in
-  if (Options.CleanTypes.get ()) then ty
-  else Printf.sprintf "(%s : %s)" name (fst ty), (snd ty)
+  if (Options.DebugTypes.get ()) then
+    Printf.sprintf "(%s : %s)" name (fst ty), (snd ty)
+  else
+    ty
