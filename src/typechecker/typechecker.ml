@@ -113,7 +113,7 @@ and infer_definition env def : env * expression_type =
     match def with
     | { recursive = false; nom; expr } ->
       let _, ty = infer_expression env expr in
-      let env'  = Typeenv.add nom (Schema.empty ty) env in
+      let env' = Typeenv.add nom (generalize expr ty env) env in
       (env', ty)
     | { recursive = true;  nom; expr } ->
       let arrow = Arrow (
@@ -121,7 +121,7 @@ and infer_definition env def : env * expression_type =
           fresh_variable "arrow_right"
         )
       in
-      let env' = Typeenv.add nom (Schema.empty arrow) env in
+      let env' = Typeenv.add nom (generalize expr arrow env) env in
       let _, ty = infer_expression env' expr in
       mgu (arrow =?= ty);
       (env', ty)
