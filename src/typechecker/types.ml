@@ -21,8 +21,8 @@ and var = {
 
 module VarSet = struct
   include Set.Make(struct
-    type t = string
-    let compare = String.compare
+      type t = string
+      let compare = String.compare
     end)
 
   let to_list s = fold (fun x a -> x :: a) s []
@@ -51,34 +51,77 @@ and var_eq v1 v2 =
 and var_eq_name v1 v2 =
   v1.name = v2.name
 
+
+
 (* Printer *)
 
-let rec string_of_expression_type = function
-  | Variable v -> string_of_var v
-  | BaseType b -> string_of_base_type b
+module VarMap = struct
+  include Map.Make(struct
+      type t = string
+      let compare = String.compare
+    end)
+end
+
+let range x y =
+  let rec aux acc x y =
+    if x > y then acc else aux (y :: acc) x (y - 1)
+  in
+  aux [] x y
+
+let letters = List.map Char.chr (range (Char.code 'a') (Char.code 'z'))
+
+let make_generator () =
+  let stream = Stream.of_list letters in
+  fun () -> Stream.next stream
+
+let replace env gen var =
+  try
+    let elt = VarMap.find var env in
+    (elt, env)
+  with Not_found ->
+    let new_var = Printf.sprintf "'%c" (gen ()) in
+    let env' = VarMap.add var new_var env in
+    (new_var, env')
+
+
+
+
+let rec string_of_expression_type ty =
+  fst (pretty_string_of_expression_type (make_generator ()) VarMap.empty ty)
+
+and pretty_string_of_expression_type gen env = function
+  | Variable v -> string_of_var gen env v
+  | BaseType b -> string_of_base_type b, env
   | Arrow (t1, t2) ->
-    Printf.sprintf "(%s -> %s)"
-      (string_of_expression_type t1)
-      (string_of_expression_type t2)
+    let str1, env' = pretty_string_of_expression_type gen env  t1 in
+    let str2, env' = pretty_string_of_expression_type gen env' t2 in
+    Printf.sprintf "(%s -> %s)" str1 str2, env'
   | Star (t1, t2) ->
-    Printf.sprintf "(%s * %s)"
-      (string_of_expression_type t1)
-      (string_of_expression_type t2)
+    let str1, env' = pretty_string_of_expression_type gen env  t1 in
+    let str2, env' = pretty_string_of_expression_type gen env' t2 in
+    Printf.sprintf "(%s * %s)" str1 str2, env'
   | List t ->
-    Printf.sprintf "%s list" (string_of_expression_type t)
+    let str, env' = pretty_string_of_expression_type gen env t in
+    Printf.sprintf "%s list" str, env'
   | Ref t ->
-    Printf.sprintf "%s ref" (string_of_expression_type t)
+    let str, env' = pretty_string_of_expression_type gen env t in
+    Printf.sprintf "%s ref" str, env'
   | Unit ->
-    "unit"
+    "unit", env
 
 and string_of_base_type = function
   | Int -> "int"
   | Bool -> "bool"
 
-and string_of_var {name; content} =
+and string_of_var gen env {name; content} =
   let ty = match content with
-    | None -> if (Options.CleanTypes.get ()) then name else "none"
-    | Some ty -> string_of_expression_type ty
+    | None ->
+      if (Options.CleanTypes.get ()) then
+        replace env gen name
+      else
+        ("none", env)
+    | Some ty ->
+      pretty_string_of_expression_type gen env ty
   in
   if (Options.CleanTypes.get ()) then ty
-  else Printf.sprintf "(%s : %s)" name ty
+  else Printf.sprintf "(%s : %s)" name (fst ty), (snd ty)
